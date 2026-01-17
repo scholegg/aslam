@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aslam_postgres
+    environment:
+      POSTGRES_USER: aslam_user
+      POSTGRES_PASSWORD: aslam_password
+      POSTGRES_DB: aslam_db
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aslam_user -d aslam_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aslam_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aslam_backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: aslam_user
+      DB_PASSWORD: aslam_password
+      DB_NAME: aslam_db
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      GIN_MODE: release
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aslam_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aslam_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8080/api
+    depends_on:
+      - backend
+    networks:
+      - aslam_network
+
+volumes:
+  postgres_data:
+
+networks:
+  aslam_network:
+    driver: bridge
