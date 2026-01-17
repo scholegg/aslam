@@ -1,4 +1,6 @@
 .git
 backend/.env
+backend/go.sum
 frontend/.env
 frontend/node_modules
+frontend/package-lock.json
